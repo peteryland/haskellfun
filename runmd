@@ -1,0 +1,35 @@
+#!/bin/bash
+
+norun=no
+
+if [[ $1 = '-n' ]]; then
+  norun=yes
+  shift
+fi
+
+tmpname="$(mktemp -p . -t XXX.hs)"
+
+for f in "$@"; do
+  echo "-- $f"
+  doecho=0
+  while IFS= read -r line; do
+    if [[ $doecho == 1 ]]; then
+      if [[ $line = '```' ]]; then
+        echo ''
+        doecho=0
+      else
+        echo "$line"
+      fi
+    else
+      if [[ $line = '```' ]]; then
+        doecho=1
+      fi
+    fi
+  done < "$f" > "$tmpname"
+  if [[ $norun = "yes" ]]; then
+    cat "$tmpname"
+  else
+    ghc -fno-code "$tmpname"
+  fi
+  rm -f "$tmpname"
+done
